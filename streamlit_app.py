@@ -1,6 +1,37 @@
 import streamlit as st
+import sqlite3
+import pandas as pd
+from datetime import datetime
 
 st.set_page_config(page_title="Mfumo wa Kikundi", layout="wide")
+
+# DATABASE CONNECTION
+conn = sqlite3.connect("kikundi.db", check_same_thread=False)
+c = conn.cursor()
+
+# CREATE TABLES
+c.execute("""
+CREATE TABLE IF NOT EXISTS members(
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+name TEXT,
+shares INTEGER DEFAULT 0
+)
+""")
+
+c.execute("""
+CREATE TABLE IF NOT EXISTS loans(
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+member TEXT,
+amount INTEGER,
+months INTEGER,
+interest INTEGER,
+insurance INTEGER,
+total INTEGER,
+date TEXT
+)
+""")
+
+conn.commit()
 
 st.title("Mfumo wa Kikundi cha Huduma Ndogo ya Fedha")
 
@@ -11,7 +42,6 @@ menu = st.sidebar.selectbox(
 "Wanachama",
 "Hisa",
 "Mikopo",
-"Mfuko wa Jamii",
 "Ripoti"
 ]
 )
@@ -21,102 +51,46 @@ if menu == "Dashboard":
 
     st.header("Muhtasari wa Kikundi")
 
-    col1,col2,col3 = st.columns(3)
+    df = pd.read_sql("SELECT * FROM members", conn)
 
-    col1.metric("Wanachama",17)
-    col2.metric("Mfuko wa Hisa","TSh 0")
-    col3.metric("Mfuko wa Jamii","TSh 0")
+    total_members = len(df)
 
-    st.success("Karibu kwenye mfumo wa kikundi")
+    total_shares = df["shares"].sum()*5000 if total_members > 0 else 0
+
+    col1,col2 = st.columns(2)
+
+    col1.metric("Wanachama", total_members)
+    col2.metric("Mfuko wa Hisa", f"TSh {total_shares}")
 
 # MEMBERS
 elif menu == "Wanachama":
 
-    st.header("Orodha ya Wanachama")
+    st.header("Usajili wa Wanachama")
 
-    members = [
-    "PAUL COSMAS MWENDA",
-    "SALIM YUSUPH MPANDA",
-    "DAUDI MWAMBENJA",
-    "JOYCE JUMA MHENDE",
-    "FRANCIS JOHN SANGA",
-    "BLANDINA ALOYCE KESSY",
-    "ESTER BETHUEL WAITARA",
-    "JOSEPH K. MGIMWA",
-    "ODRIA S. SINDAMENYA",
-    "ANDERSON LINUSY KISAVA",
-    "PENDO JOHN MGIMWA",
-    "ANDREW KISAVA WILIAM",
-    "PROSISTA KIWANGO",
-    "FROLA METHOD NGOMOI",
-    "MARY STEPHEN LUGISA",
-    "SALOME S. KISHOSHA",
-    "EDINA MTOMO NHONYA"
-    ]
+    name = st.text_input("Jina la Mwanachama")
 
-    for m in members:
-        st.write(m)
+    if st.button("Sajili Mwanachama"):
+
+        c.execute("INSERT INTO members (name) VALUES (?)",(name,))
+        conn.commit()
+
+        st.success("Mwanachama ameongezwa")
+
+    st.subheader("Orodha ya Wanachama")
+
+    df = pd.read_sql("SELECT * FROM members", conn)
+
+    st.dataframe(df)
 
 # SHARES
 elif menu == "Hisa":
 
     st.header("Ununuzi wa Hisa")
 
-    name = st.text_input("Jina la Mwanachama")
+    members = pd.read_sql("SELECT * FROM members", conn)
 
-    shares = st.number_input(
-    "Idadi ya Hisa",
-    min_value=1,
-    max_value=20
-    )
+    if len(members) == 0:
+        st.warning("Hakuna wanachama bado")
+    else:
 
-    if st.button("Hifadhi"):
-
-        amount = shares * 5000
-
-        st.success(
-        f"Hisa {shares} zimehifadhiwa. Jumla TSh {amount}"
-        )
-
-# LOANS
-elif menu == "Mikopo":
-
-    st.header("Maombi ya Mkopo")
-
-    member = st.text_input("Jina la Mwanachama")
-
-    amount = st.number_input("Kiasi cha Mkopo")
-
-    months = st.slider(
-    "Muda wa Mkopo (Miezi)",
-    1,
-    4
-    )
-
-    if st.button("Hesabu Mkopo"):
-
-        interest = amount * 0.05 * months
-        insurance = amount * 0.02
-        total = amount + interest
-
-        st.write("Riba:", interest)
-        st.write("Bima:", insurance)
-        st.write("Jumla ya Marejesho:", total)
-
-# SOCIAL FUND
-elif menu == "Mfuko wa Jamii":
-
-    st.header("Michango ya Mfuko wa Jamii")
-
-    name = st.text_input("Jina la Mwanachama")
-
-    if st.button("Rekodi Mchango"):
-
-        st.success("TSh 1000 imehifadhiwa")
-
-# REPORTS
-elif menu == "Ripoti":
-
-    st.header("Ripoti za Kikundi")
-
-    st.write("Ripoti zitaonekana hapa")
+        member = st
