@@ -88,4 +88,4 @@ elif menu == "Hisa":
 
     if len(members) == 0:
 
-        st.warning("Hakuna wanachama bado
+        st.warning("Hakuna wanachama bado")
