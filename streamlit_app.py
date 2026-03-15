@@ -144,7 +144,7 @@ elif menu == "Mikopo":
 
     members = pd.read_sql("SELECT * FROM members", conn)
 
-    if len(members)==0:
+    if len(members) == 0:
 
         st.warning("Sajili wanachama kwanza")
 
@@ -152,11 +152,11 @@ elif menu == "Mikopo":
 
         member = st.selectbox("Mwanachama", members["name"])
 
-        amount = st.number_input("Kiasi cha Mkopo")
+        amount = st.number_input("Kiasi cha Mkopo", min_value=1000)
 
         months = st.slider("Muda wa Mkopo (miezi)",1,4)
 
-        if st.button("Omba Mkopo"):
+        if st.button("Hesabu Mkopo"):
 
             if datetime.now().month == 11:
 
@@ -164,25 +164,55 @@ elif menu == "Mikopo":
 
             else:
 
+                # calculations
                 interest = amount * 0.05 * months
                 insurance = amount * 0.02
-                total = amount + interest
+                total_repayment = amount + interest
+                monthly_payment = total_repayment / months
+                receive_amount = amount - insurance
 
-                c.execute("""
-                INSERT INTO loans
-                (member,amount,months,interest,insurance,total,date)
-                VALUES (?,?,?,?,?,?,?)
-                """,
-                (member,amount,months,interest,insurance,total,str(datetime.now()))
-                )
+                st.subheader("Muhtasari wa Mkopo")
 
-                conn.commit()
+                st.write("Kiasi cha Mkopo:", amount)
+                st.write("Bima (2%):", insurance)
+                st.write("Kiasi atakachopokea Mkopaji:", receive_amount)
+                st.write("Riba ya Jumla:", interest)
+                st.write("Jumla ya kurejesha:", total_repayment)
+                st.write("Malipo kwa mwezi:", monthly_payment)
 
-                st.success("Mkopo umehifadhiwa")
+                # repayment schedule
+                schedule = []
 
-                st.write("Riba:",interest)
-                st.write("Bima:",insurance)
-                st.write("Jumla ya kurejesha:",total)
+                for i in range(1, months+1):
+
+                    schedule.append({
+                        "Mwezi": i,
+                        "Malipo": monthly_payment
+                    })
+
+                df = pd.DataFrame(schedule)
+
+                st.subheader("Ratiba ya Marejesho")
+
+                st.table(df)
+
+        if st.button("Hifadhi Mkopo"):
+
+            interest = amount * 0.05 * months
+            insurance = amount * 0.02
+            total = amount + interest
+
+            c.execute("""
+            INSERT INTO loans
+            (member,amount,months,interest,insurance,total,date)
+            VALUES (?,?,?,?,?,?,?)
+            """,
+            (member,amount,months,interest,insurance,total,str(datetime.now()))
+            )
+
+            conn.commit()
+
+            st.success("Mkopo umehifadhiwa kwenye mfumo")
 
 # SOCIAL FUND
 elif menu == "Mfuko wa Jamii":
