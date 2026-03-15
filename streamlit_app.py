@@ -9,7 +9,7 @@ st.set_page_config(page_title="Mfumo wa Kikundi", layout="wide")
 conn = sqlite3.connect("kikundi.db", check_same_thread=False)
 c = conn.cursor()
 
-# TABLES
+# CREATE TABLES
 c.execute("""
 CREATE TABLE IF NOT EXISTS members(
 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,13 +37,7 @@ st.title("Mfumo wa Kikundi cha Huduma Ndogo ya Fedha")
 
 menu = st.sidebar.selectbox(
 "Chagua Sehemu",
-[
-"Dashboard",
-"Wanachama",
-"Hisa",
-"Mikopo",
-"Ripoti"
-]
+["Dashboard","Wanachama","Hisa","Mikopo","Ripoti"]
 )
 
 # DASHBOARD
@@ -88,4 +82,10 @@ elif menu == "Wanachama":
 # SHARES
 elif menu == "Hisa":
 
-    st.header("Ununuzi wa Hisa
+    st.header("Ununuzi wa Hisa")
+
+    members = pd.read_sql("SELECT * FROM members", conn)
+
+    if len(members) == 0:
+
+        st.warning("Hakuna wanachama bado
